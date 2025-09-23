@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV to JSON Converter</title>
+    <!-- Tailwind CSS for modern, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8 space-y-6">
+        <h1 class="text-3xl font-bold text-center text-gray-800">CSV to JSON Converter</h1>
+        <p class="text-center text-gray-600">
+            Paste your CSV text into the input box below. The properly formatted JSON will appear in the output box.
+        </p>
+
+        <!-- Input and Output Textareas Container -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="csvInput" class="block text-sm font-medium text-gray-700 mb-2">CSV Input</label>
+                <textarea id="csvInput" rows="15" class="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm" placeholder="Paste your CSV data here..."></textarea>
+            </div>
+            <div>
+                <label for="jsonOutput" class="block text-sm font-medium text-gray-700 mb-2">JSON Output</label>
+                <textarea id="jsonOutput" rows="15" class="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-100 font-mono text-sm" readonly></textarea>
+            </div>
+        </div>
+        
+        <!-- Action Button -->
+        <div class="flex justify-center">
+            <button id="convertButton" class="bg-blue-500 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-blue-600 transition-colors">
+                Convert to JSON
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('convertButton').addEventListener('click', () => {
+            const csvInput = document.getElementById('csvInput').value.trim();
+            const jsonOutput = document.getElementById('jsonOutput');
+
+            if (!csvInput) {
+                jsonOutput.value = "Input is empty. Please paste your CSV data.";
+                return;
+            }
+
+            try {
+                // Split the CSV by lines and remove empty lines
+                const lines = csvInput.split('\n').filter(line => line.trim() !== '');
+                if (lines.length === 0) {
+                    jsonOutput.value = "No data found in the CSV.";
+                    return;
+                }
+
+                // Assume the first line is the header (keys)
+                const headers = lines[0].split(',').map(header => header.trim());
+                const result = [];
+
+                // Process the data rows
+                for (let i = 1; i < lines.length; i++) {
+                    const values = lines[i].split(',').map(value => value.trim());
+                    if (values.length !== headers.length) {
+                        console.warn(`Skipping line ${i + 1} due to inconsistent number of values.`);
+                        continue;
+                    }
+
+                    let obj = {};
+                    for (let j = 0; j < headers.length; j++) {
+                        // Create a key-value pair, removing any extra quotes
+                        obj[headers[j]] = values[j].replace(/^"|"$/g, '');
+                    }
+                    result.push(obj);
+                }
+
+                // Format the output and display it
+                jsonOutput.value = JSON.stringify(result, null, 2);
+            } catch (error) {
+                jsonOutput.value = `An error occurred during conversion: ${error.message}`;
+                console.error("CSV to JSON conversion error:", error);
+            }
+        });
+    </script>
+
+</body>
+</html>
+
