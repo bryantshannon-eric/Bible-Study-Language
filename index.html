@@ -25,6 +25,7 @@
       line-height: 2;
       flex-grow: 1;
       overflow-y: auto;
+      white-space: pre-line;
     }
     .fullscreen {
       position: fixed;
@@ -61,7 +62,8 @@
     <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
       <select id="bookSelect" class="bg-gray-100 rounded-lg p-2.5"></select>
       <input type="number" id="chapterInput" min="1" value="1" class="w-24 bg-gray-100 rounded-lg p-2.5 text-center"/>
-      <input type="number" id="verseInput" min="1" value="1" class="w-24 bg-gray-100 rounded-lg p-2.5 text-center"/>
+      <input type="number" id="verseInput" min="1" value="1" class="w-24 bg-gray-100 rounded-lg p-2.5 text-center" placeholder="Start Verse"/>
+      <input type="number" id="endVerseInput" min="1" value="1" class="w-24 bg-gray-100 rounded-lg p-2.5 text-center" placeholder="End Verse"/>
       <button id="showSettingsBtn" class="bg-blue-500 text-white rounded-lg px-6 py-2.5 font-semibold hover:bg-blue-600">Settings</button>
     </div>
   </header>
@@ -123,12 +125,14 @@
       versions: [],
       currentBook: "Genesis",
       currentChapter: 1,
-      currentVerse: 1
+      currentVerse: 1,
+      endVerse: 1
     };
 
     const bookSelect = document.getElementById('bookSelect');
     const chapterInput = document.getElementById('chapterInput');
     const verseInput = document.getElementById('verseInput');
+    const endVerseInput = document.getElementById('endVerseInput');
     const showSettingsBtn = document.getElementById('showSettingsBtn');
     const settingsPanel = document.getElementById('settingsPanel');
     const closeSettingsBtn = document.getElementById('closeSettingsBtn');
@@ -136,42 +140,28 @@
     const fullscreenBtns = document.querySelectorAll('.fullscreen-btn');
 
     async function loadBibleData() {
-  const fileNames = {
-    "ESV": { file: "ESV.json", name: "English Standard Version" },
-    "GNT": { file: "GNT.json", name: "Greek New Testament" },
-    "KJV": { file: "KJV.json", name: "King James Version" },
-    "RVR": { file: "RVR.json", name: "Reina Valera 1909" }
-  };
-  const result = {};
-  await Promise.all(Object.entries(fileNames).map(([key, fileInfo]) =>
-    fetch(fileInfo.file)
-      .then(r => r.json())
-      .then(data => {
-        const rootKey = Object.keys(data)[0];
-        const rootData = data[rootKey];
-
-        let books = rootData.books || data;
-
-        // 🔑 Normalize Spanish book names so they match English lookups
-        if (key === "RVR") {
-          const normalizedBooks = {};
-          for (const [bookName, chapters] of Object.entries(books)) {
-            // Strip accents → e.g., Génesis → Genesis, Éxodo → Exodo
-            const normalized = bookName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            normalizedBooks[normalized] = chapters;
-          }
-          books = normalizedBooks;
-        }
-
-        result[key] = {
-          name: rootData.name || fileInfo.name,
-          books
-        };
-      })
-  ));
-  return result;
-}
-
+      const fileNames = {
+        "ESV": { file: "ESV.json", name: "English Standard Version" },
+        "GNT": { file: "GNT.json", name: "Greek New Testament" },
+        "KJV": { file: "KJV.json", name: "King James Version" },
+        "RVR": { file: "RVR.json", name: "Reina Valera 1909" }
+      };
+      const result = {};
+      await Promise.all(Object.entries(fileNames).map(([key, fileInfo]) =>
+        fetch(fileInfo.file)
+          .then(r => r.json())
+          .then(data => {
+            const rootKey = Object.keys(data)[0];
+            const rootData = data[rootKey];
+            let books = rootData.books || data;
+            result[key] = {
+              name: rootData.name || fileInfo.name,
+              books
+            };
+          })
+      ));
+      return result;
+    }
 
     function updateVerseDisplays() {
       for (let i = 1; i <= windowCount; i++) {
@@ -179,13 +169,22 @@
         const versionTitleEl = document.getElementById(`version-title-${i}`);
         const verseContentEl = document.getElementById(`verse-content-${i}`);
         const book = userSettings.currentBook;
-        let verseText = "Not found";
-
-        if (bibleData[versionKey]?.books[book]?.[userSettings.currentChapter]) {
-          verseText = bibleData[versionKey].books[book][userSettings.currentChapter][userSettings.currentVerse] || "Not found";
+        const chapter = userSettings.currentChapter;
+        const startVerse = userSettings.currentVerse;
+        const endVerse = userSettings.endVerse;
+        let verseText = "";
+        if (bibleData[versionKey]?.books[book]?.[chapter]) {
+          for (let v = startVerse; v <= endVerse; v++) {
+            let vt = bibleData[versionKey].books[book][chapter][v];
+            if (vt) {
+              verseText += `${v}. ${vt}\n\n`;
+            }
+          }
+          if (!verseText) verseText = "Not found";
+        } else {
+          verseText = "Not found";
         }
-
-        versionTitleEl.textContent = `${bibleData[versionKey].name} - ${book} ${userSettings.currentChapter}:${userSettings.currentVerse}`;
+        versionTitleEl.textContent = `${bibleData[versionKey].name} - ${book} ${chapter}:${startVerse}${startVerse !== endVerse ? '-' + endVerse : ''}`;
         verseContentEl.textContent = verseText;
       }
     }
@@ -204,6 +203,7 @@
       userSettings.currentBook = bookSelect.value;
       userSettings.currentChapter = +chapterInput.value;
       userSettings.currentVerse = +verseInput.value;
+      userSettings.endVerse = +endVerseInput.value;
       updateVerseDisplays();
     }
 
@@ -234,6 +234,7 @@
     bookSelect.addEventListener('change', handleSelectionChange);
     chapterInput.addEventListener('change', handleSelectionChange);
     verseInput.addEventListener('change', handleSelectionChange);
+    endVerseInput.addEventListener('change', handleSelectionChange);
     showSettingsBtn.addEventListener('click', () => toggleSettingsPanel(true));
     closeSettingsBtn.addEventListener('click', () => toggleSettingsPanel(false));
     saveSettingsBtn.addEventListener('click', saveSettings);
@@ -248,6 +249,8 @@
         const keys = Object.keys(bibleData);
         userSettings.versions = keys.slice(0, windowCount);
         userSettings.currentBook = Object.keys(bibleData[keys[0]].books)[0];
+        userSettings.currentVerse = 1;
+        userSettings.endVerse = 1;
       }
       populateBookSelect();
       const keys = Object.keys(bibleData);
@@ -258,6 +261,7 @@
       }
       chapterInput.value = userSettings.currentChapter;
       verseInput.value = userSettings.currentVerse;
+      endVerseInput.value = userSettings.endVerse;
       bookSelect.value = userSettings.currentBook;
       updateVerseDisplays();
     }
@@ -266,4 +270,3 @@
   </script>
 </body>
 </html>
-
