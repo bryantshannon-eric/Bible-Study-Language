@@ -1,363 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bible Viewer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom styles for the app */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-        }
-        .verse-window {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background-color: white;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            transition: all 0.3s ease-in-out;
-        }
-        .verse-content {
-            padding: 1.5rem;
-            line-height: 2; /* Double-spaced text for notes */
-            flex-grow: 1;
-            overflow-y: auto; /* Scrollable content */
-        }
-        /* Fullscreen mode for a single window */
-        .fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 50;
-        }
-        /* Hidden settings panel */
-        .settings-panel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 60;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease-in-out;
-        }
-        .settings-panel.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bible Viewer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+    }
+    .verse-window {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background-color: white;
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      transition: all 0.3s ease-in-out;
+    }
+    .verse-content {
+      padding: 1.5rem;
+      line-height: 2;
+      flex-grow: 1;
+      overflow-y: auto;
+    }
+    .fullscreen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 50;
+    }
+    .settings-panel {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-in-out;
+    }
+    .settings-panel.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
 </head>
 <body class="p-8">
 
-    <header class="bg-white rounded-2xl shadow-lg p-6 mb-8 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-        <h1 class="text-3xl font-bold text-gray-800">Bible Viewer</h1>
-        <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
-            <select id="bookSelect" class="bg-gray-100 rounded-lg p-2.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-            <input type="number" id="chapterInput" min="1" value="1" class="w-24 bg-gray-100 rounded-lg p-2.5 text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <input type="number" id="verseInput" min="1" value="1" class="w-24 bg-gray-100 rounded-lg p-2.5 text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <button id="showSettingsBtn" class="bg-blue-500 text-white rounded-lg px-6 py-2.5 font-semibold hover:bg-blue-600 transition-colors">
-                Settings
-            </button>
-        </div>
-    </header>
-
-    <main class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-screen-32">
-        <div id="window-1" class="verse-window">
-            <div class="p-4 bg-blue-100 text-blue-800 font-semibold flex items-center justify-between">
-                <span id="version-title-1"></span>
-                <button class="fullscreen-btn text-blue-600 hover:text-blue-800 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5m-5 11v-4m0 0H8m0 0l-5 5m11-11v4m0 0h4m-4 0l5-5" />
-                    </svg>
-                </button>
-            </div>
-            <div id="verse-content-1" class="verse-content"></div>
-        </div>
-
-        <div id="window-2" class="verse-window">
-            <div class="p-4 bg-blue-100 text-blue-800 font-semibold flex items-center justify-between">
-                <span id="version-title-2"></span>
-                <button class="fullscreen-btn text-blue-600 hover:text-blue-800 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5m-5 11v-4m0 0H8m0 0l-5 5m11-11v4m0 0h4m-4 0l5-5" />
-                    </svg>
-                </button>
-            </div>
-            <div id="verse-content-2" class="verse-content"></div>
-        </div>
-
-        <div id="window-3" class="verse-window">
-            <div class="p-4 bg-blue-100 text-blue-800 font-semibold flex items-center justify-between">
-                <span id="version-title-3"></span>
-                <button class="fullscreen-btn text-blue-600 hover:text-blue-800 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5m-5 11v-4m0 0H8m0 0l-5 5m11-11v4m0 0h4m-4 0l5-5" />
-                    </svg>
-                </button>
-            </div>
-            <div id="verse-content-3" class="verse-content"></div>
-        </div>
-
-        <div id="window-4" class="verse-window">
-            <div class="p-4 bg-blue-100 text-blue-800 font-semibold flex items-center justify-between">
-                <span id="version-title-4"></span>
-                <button class="fullscreen-btn text-blue-600 hover:text-blue-800 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5m-5 11v-4m0 0H8m0 0l-5 5m11-11v4m0 0h4m-4 0l5-5" />
-                    </svg>
-                </button>
-            </div>
-            <div id="verse-content-4" class="verse-content"></div>
-        </div>
-    </main>
-
-    <div id="settingsPanel" class="settings-panel">
-        <div class="bg-white rounded-2xl shadow-xl p-8 w-11/12 md:w-1/2 lg:w-1/3 space-y-6">
-            <h2 class="text-2xl font-bold text-gray-800">Settings</h2>
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <label for="versionSelect-1" class="text-gray-700">Window 1 Version:</label>
-                    <select id="versionSelect-1" class="bg-gray-100 rounded-lg p-2.5 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-                </div>
-                <div class="flex items-center justify-between">
-                    <label for="versionSelect-2" class="text-gray-700">Window 2 Version:</label>
-                    <select id="versionSelect-2" class="bg-gray-100 rounded-lg p-2.5 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-                </div>
-                <div class="flex items-center justify-between">
-                    <label for="versionSelect-3" class="text-gray-700">Window 3 Version:</label>
-                    <select id="versionSelect-3" class="bg-gray-100 rounded-lg p-2.5 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-                </div>
-                <div class="flex items-center justify-between">
-                    <label for="versionSelect-4" class="text-gray-700">Window 4 Version:</label>
-                    <select id="versionSelect-4" class="bg-gray-100 rounded-lg p-2.5 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
-                </div>
-            </div>
-            <div class="flex justify-end space-x-4">
-                <button id="closeSettingsBtn" class="bg-gray-300 text-gray-800 rounded-lg px-6 py-2.5 font-semibold hover:bg-gray-400 transition-colors">
-                    Close
-                </button>
-                <button id="saveSettingsBtn" class="bg-green-500 text-white rounded-lg px-6 py-2.5 font-semibold hover:bg-green-600 transition-colors">
-                    Save
-                </button>
-            </div>
-        </div>
+  <!-- Header -->
+  <header class="bg-white rounded-2xl shadow-lg p-6 mb-8 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+    <h1 class="text-3xl font-bold text-gray-800">Bible Viewer</h1>
+    <div class="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-4">
+      <select id="bookSelect" class="bg-gray-100 rounded-lg p-2.5"></select>
+      <input type="number" id="chapterInput" min="1" value="1" class="w-24 bg-gray-100 rounded-lg p-2.5 text-center"/>
+      <input type="number" id="verseInput" min="1" value="1" class="w-24 bg-gray-100 rounded-lg p-2.5 text-center"/>
+      <button id="showSettingsBtn" class="bg-blue-500 text-white rounded-lg px-6 py-2.5 font-semibold hover:bg-blue-600">Settings</button>
     </div>
+  </header>
 
-    <script>
-        // Checkpoint 1: Global data and variables
-        let bibleData;
-        const windowCount = 4;
-        let userSettings = {
-            versions: [],
-            currentBook: "Genesis",
-            currentChapter: 1,
-            currentVerse: 1
-        };
+  <!-- Main windows -->
+  <main class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-screen-32">
+    <div id="window-1" class="verse-window">
+      <div class="p-4 bg-blue-100 text-blue-800 font-semibold flex justify-between">
+        <span id="version-title-1"></span>
+        <button class="fullscreen-btn">⛶</button>
+      </div>
+      <div id="verse-content-1" class="verse-content"></div>
+    </div>
+    <div id="window-2" class="verse-window">
+      <div class="p-4 bg-blue-100 text-blue-800 font-semibold flex justify-between">
+        <span id="version-title-2"></span>
+        <button class="fullscreen-btn">⛶</button>
+      </div>
+      <div id="verse-content-2" class="verse-content"></div>
+    </div>
+    <div id="window-3" class="verse-window">
+      <div class="p-4 bg-blue-100 text-blue-800 font-semibold flex justify-between">
+        <span id="version-title-3"></span>
+        <button class="fullscreen-btn">⛶</button>
+      </div>
+      <div id="verse-content-3" class="verse-content"></div>
+    </div>
+    <div id="window-4" class="verse-window">
+      <div class="p-4 bg-blue-100 text-blue-800 font-semibold flex justify-between">
+        <span id="version-title-4"></span>
+        <button class="fullscreen-btn">⛶</button>
+      </div>
+      <div id="verse-content-4" class="verse-content"></div>
+    </div>
+  </main>
 
-        // Checkpoint 2: Get all the HTML elements we need to interact with
-        const bookSelect = document.getElementById('bookSelect');
-        const chapterInput = document.getElementById('chapterInput');
-        const verseInput = document.getElementById('verseInput');
-        const showSettingsBtn = document.getElementById('showSettingsBtn');
-        const settingsPanel = document.getElementById('settingsPanel');
-        const closeSettingsBtn = document.getElementById('closeSettingsBtn');
-        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-        const fullscreenBtns = document.querySelectorAll('.fullscreen-btn');
+  <!-- Settings -->
+  <div id="settingsPanel" class="settings-panel">
+    <div class="bg-white rounded-2xl shadow-xl p-8 w-11/12 md:w-1/2 lg:w-1/3 space-y-6">
+      <h2 class="text-2xl font-bold">Settings</h2>
+      <div class="space-y-4">
+        <div><label>Window 1: <select id="versionSelect-1"></select></label></div>
+        <div><label>Window 2: <select id="versionSelect-2"></select></label></div>
+        <div><label>Window 3: <select id="versionSelect-3"></select></label></div>
+        <div><label>Window 4: <select id="versionSelect-4"></select></label></div>
+      </div>
+      <div class="flex justify-end space-x-4">
+        <button id="closeSettingsBtn" class="bg-gray-300 px-6 py-2.5 rounded-lg">Close</button>
+        <button id="saveSettingsBtn" class="bg-green-500 text-white px-6 py-2.5 rounded-lg">Save</button>
+      </div>
+    </div>
+  </div>
 
-        // Checkpoint 3: Core Functions
-
-async function loadBibleData() {
-    const fileNames = {
-        "ESV": { file: "ESV.json", name: "English Standard Version" },
-        "GNT": { file: "GNT.json", name: "Greek New Testament" }, // Changed
-        "KJV": { file: "KJV.json", name: "King James Version (with Strongs)" }, // Changed
-        "RVR": { file: "RVR.json", name: "Reina Valera (Spanish with Strongs)" }  // Changed
+  <!-- Script -->
+  <script>
+    let bibleData;
+    const windowCount = 4;
+    let userSettings = {
+      versions: [],
+      currentBook: "Genesis",
+      currentChapter: 1,
+      currentVerse: 1
     };
-    // ... rest of the function remains the same
-}
 
-            const bibleData = {};
-            const promises = [];
+    const bookSelect = document.getElementById('bookSelect');
+    const chapterInput = document.getElementById('chapterInput');
+    const verseInput = document.getElementById('verseInput');
+    const showSettingsBtn = document.getElementById('showSettingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+    const fullscreenBtns = document.querySelectorAll('.fullscreen-btn');
 
-            for (const key in fileNames) {
-                if (Object.prototype.hasOwnProperty.call(fileNames, key)) {
-                    const fileInfo = fileNames[key];
-                    promises.push(
-                        fetch(fileInfo.file)
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error(`Failed to load ${fileInfo.file}: ${response.statusText}`);
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                bibleData[key] = {
-                                    name: fileInfo.name,
-                                    books: data
-                                };
-                            })
-                            .catch(error => {
-                                console.error(error);
-                            })
-                    );
-                }
-            }
-            await Promise.all(promises);
-            return bibleData;
+    async function loadBibleData() {
+      const fileNames = {
+        "ESV": { file: "ESV.json", name: "English Standard Version" },
+        "GNT": { file: "GNT.json", name: "Greek New Testament" },
+        "KJV": { file: "KJV.json", name: "King James Version" },
+        "RVR": { file: "RVR.json", name: "Reina Valera 1909" }
+      };
+      const result = {};
+      await Promise.all(Object.entries(fileNames).map(([key, fileInfo]) =>
+        fetch(fileInfo.file)
+          .then(r => r.json())
+          .then(data => {
+            const rootKey = Object.keys(data)[0];
+            const rootData = data[rootKey];
+            result[key] = {
+              name: rootData.name || fileInfo.name,
+              books: rootData.books || data
+            };
+          })
+      ));
+      return result;
+    }
+
+    function updateVerseDisplays() {
+      for (let i = 1; i <= windowCount; i++) {
+        const versionKey = userSettings.versions[i - 1];
+        const versionTitleEl = document.getElementById(`version-title-${i}`);
+        const verseContentEl = document.getElementById(`verse-content-${i}`);
+        const book = userSettings.currentBook;
+        let verseText = "Not found";
+
+        if (bibleData[versionKey]?.books[book]?.[userSettings.currentChapter]) {
+          verseText = bibleData[versionKey].books[book][userSettings.currentChapter][userSettings.currentVerse] || "Not found";
         }
 
-        function updateVerseDisplays() {
-            if (!bibleData) return;
+        versionTitleEl.textContent = `${bibleData[versionKey].name} - ${book} ${userSettings.currentChapter}:${userSettings.currentVerse}`;
+        verseContentEl.textContent = verseText;
+      }
+    }
 
-            for (let i = 1; i <= windowCount; i++) {
-                const versionKey = userSettings.versions[i - 1];
-                const versionTitleEl = document.getElementById(`version-title-${i}`);
-                const verseContentEl = document.getElementById(`verse-content-${i}`);
-                const commonBookName = userSettings.currentBook;
-                let verseText = "Verse not found in this version.";
+    function populateBookSelect() {
+      const firstVersionKey = Object.keys(bibleData)[0];
+      const bookNames = Object.keys(bibleData[firstVersionKey].books);
+      bookSelect.innerHTML = bookNames.map(b => `<option>${b}</option>`).join('');
+      if (!bookNames.includes(userSettings.currentBook)) {
+        userSettings.currentBook = bookNames[0];
+      }
+      bookSelect.value = userSettings.currentBook;
+    }
 
-                try {
-                    const versionData = bibleData[versionKey].books;
-                    if (versionData && versionData[commonBookName]) {
-                        const chapterData = versionData[commonBookName][userSettings.currentChapter];
-                        if (chapterData) {
-                            verseText = chapterData[userSettings.currentVerse] || "Verse not found in this version.";
-                        }
-                    }
-                } catch (e) {
-                    console.warn(`Verse not found for ${versionKey} ${commonBookName} ${userSettings.currentChapter}:${userSettings.currentVerse}`, e);
-                }
+    function handleSelectionChange() {
+      userSettings.currentBook = bookSelect.value;
+      userSettings.currentChapter = +chapterInput.value;
+      userSettings.currentVerse = +verseInput.value;
+      updateVerseDisplays();
+    }
 
-                versionTitleEl.textContent = `${bibleData[versionKey].name} - ${commonBookName} ${userSettings.currentChapter}:${userSettings.currentVerse}`;
-                verseContentEl.textContent = verseText;
-            }
-        }
+    function toggleSettingsPanel(show) {
+      settingsPanel.classList.toggle('active', show);
+    }
 
-        // This function populates the book dropdown
-        function populateBookSelect() {
-            const firstVersionKey = Object.keys(bibleData)[0];
-            if (!firstVersionKey) {
-                console.error("No bible versions loaded. Cannot populate book select.");
-                return;
-            }
-            const bookNames = Object.keys(bibleData[firstVersionKey].books);
-            bookSelect.innerHTML = bookNames.map(book => `<option value="${book}">${book}</option>`).join('');
-            bookSelect.value = userSettings.currentBook;
-        }
+    function saveSettings() {
+      for (let i = 1; i <= windowCount; i++) {
+        userSettings.versions[i - 1] = document.getElementById(`versionSelect-${i}`).value;
+      }
+      localStorage.setItem('bibleSettings', JSON.stringify(userSettings));
+      updateVerseDisplays();
+      toggleSettingsPanel(false);
+    }
 
-        // This function handles changes in the top selection inputs
-        function handleSelectionChange() {
-            userSettings.currentBook = bookSelect.value;
-            userSettings.currentChapter = parseInt(chapterInput.value, 10);
-            userSettings.currentVerse = parseInt(verseInput.value, 10);
-            updateVerseDisplays();
-        }
+    function toggleFullscreen(e) {
+      const win = e.target.closest('.verse-window');
+      const isFs = win.classList.toggle('fullscreen');
+      document.querySelector('header').classList.toggle('hidden', isFs);
+      document.querySelector('main').classList.toggle('block', isFs);
+      document.querySelector('main').classList.toggle('grid', !isFs);
+      document.querySelectorAll('.verse-window').forEach(w => {
+        if (w !== win) w.style.display = isFs ? 'none' : 'flex';
+      });
+    }
 
-        // This function shows or hides the settings panel
-        function toggleSettingsPanel(show) {
-            if (show) {
-                settingsPanel.classList.add('active');
-            } else {
-                settingsPanel.classList.remove('active');
-            }
-        }
+    bookSelect.addEventListener('change', handleSelectionChange);
+    chapterInput.addEventListener('change', handleSelectionChange);
+    verseInput.addEventListener('change', handleSelectionChange);
+    showSettingsBtn.addEventListener('click', () => toggleSettingsPanel(true));
+    closeSettingsBtn.addEventListener('click', () => toggleSettingsPanel(false));
+    saveSettingsBtn.addEventListener('click', saveSettings);
+    fullscreenBtns.forEach(btn => btn.addEventListener('click', toggleFullscreen));
 
-        // This function saves the user's version choices from the settings panel
-        function saveSettings() {
-            for (let i = 1; i <= windowCount; i++) {
-                const selectElement = document.getElementById(`versionSelect-${i}`);
-                userSettings.versions[i - 1] = selectElement.value;
-            }
-            localStorage.setItem('bibleSettings', JSON.stringify(userSettings));
-            updateVerseDisplays();
-            toggleSettingsPanel(false);
-        }
+    async function initializeApp() {
+      bibleData = await loadBibleData();
+      const saved = localStorage.getItem('bibleSettings');
+      if (saved) {
+        userSettings = JSON.parse(saved);
+      } else {
+        const keys = Object.keys(bibleData);
+        userSettings.versions = keys.slice(0, windowCount);
+        userSettings.currentBook = Object.keys(bibleData[keys[0]].books)[0];
+      }
+      populateBookSelect();
+      const keys = Object.keys(bibleData);
+      for (let i = 1; i <= windowCount; i++) {
+        const sel = document.getElementById(`versionSelect-${i}`);
+        sel.innerHTML = keys.map(k => `<option value="${k}">${bibleData[k].name}</option>`).join('');
+        sel.value = userSettings.versions[i - 1];
+      }
+      chapterInput.value = userSettings.currentChapter;
+      verseInput.value = userSettings.currentVerse;
+      bookSelect.value = userSettings.currentBook;
+      updateVerseDisplays();
+    }
 
-        // This function handles the fullscreen toggle for a window
-        function toggleFullscreen(event) {
-            const windowEl = event.target.closest('.verse-window');
-            if (windowEl) {
-                const isFullscreen = windowEl.classList.toggle('fullscreen');
-                const mainContainer = document.querySelector('main');
-                const header = document.querySelector('header');
-
-                if (isFullscreen) {
-                    header.classList.add('hidden');
-                    mainContainer.classList.remove('grid-cols-1', 'lg:grid-cols-2');
-                    mainContainer.classList.add('block');
-                } else {
-                    header.classList.remove('hidden');
-                    mainContainer.classList.remove('block');
-                    mainContainer.classList.add('grid-cols-1', 'lg:grid-cols-2');
-                }
-
-                const otherWindows = document.querySelectorAll('.verse-window');
-                otherWindows.forEach(win => {
-                    if (win !== windowEl) {
-                        win.style.display = isFullscreen ? 'none' : 'flex';
-                    }
-                });
-            }
-        }
-
-        // Checkpoint 4: Event Listeners
-        bookSelect.addEventListener('change', handleSelectionChange);
-        chapterInput.addEventListener('change', handleSelectionChange);
-        verseInput.addEventListener('change', handleSelectionChange);
-        showSettingsBtn.addEventListener('click', () => toggleSettingsPanel(true));
-        closeSettingsBtn.addEventListener('click', () => toggleSettingsPanel(false));
-        saveSettingsBtn.addEventListener('click', saveSettings);
-
-        fullscreenBtns.forEach(btn => {
-            btn.addEventListener('click', toggleFullscreen);
-        });
-
-        // Checkpoint 5: Initialization
-        async function initializeApp() {
-            bibleData = await loadBibleData();
-
-            if (!bibleData || Object.keys(bibleData).length === 0) {
-                console.error("Failed to load bible data.");
-                return;
-            }
-
-            const savedSettings = localStorage.getItem('bibleSettings');
-            if (savedSettings) {
-                userSettings = JSON.parse(savedSettings);
-            } else {
-                const versionKeys = Object.keys(bibleData);
-                userSettings.versions = versionKeys.slice(0, windowCount);
-            }
-
-            populateBookSelect();
-
-            const versionKeys = Object.keys(bibleData);
-            for (let i = 1; i <= windowCount; i++) {
-                const selectEl = document.getElementById(`versionSelect-${i}`);
-                selectEl.innerHTML = versionKeys.map(key => `<option value="${key}">${bibleData[key].name}</option>`).join('');
-                selectEl.value = userSettings.versions[i - 1];
-            }
-
-            chapterInput.value = userSettings.currentChapter;
-            verseInput.value = userSettings.currentVerse;
-            bookSelect.value = userSettings.currentBook;
-
-            updateVerseDisplays();
-        }
-
-        // Run the app!
-        initializeApp();
-    </script>
+    initializeApp();
+  </script>
 </body>
 </html>
+
