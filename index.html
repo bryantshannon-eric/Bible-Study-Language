@@ -136,27 +136,42 @@
     const fullscreenBtns = document.querySelectorAll('.fullscreen-btn');
 
     async function loadBibleData() {
-      const fileNames = {
-        "ESV": { file: "ESV.json", name: "English Standard Version" },
-        "GNT": { file: "GNT.json", name: "Greek New Testament" },
-        "KJV": { file: "KJV.json", name: "King James Version" },
-        "RVR": { file: "RVR.json", name: "Reina Valera 1909" }
-      };
-      const result = {};
-      await Promise.all(Object.entries(fileNames).map(([key, fileInfo]) =>
-        fetch(fileInfo.file)
-          .then(r => r.json())
-          .then(data => {
-            const rootKey = Object.keys(data)[0];
-            const rootData = data[rootKey];
-            result[key] = {
-              name: rootData.name || fileInfo.name,
-              books: rootData.books || data
-            };
-          })
-      ));
-      return result;
-    }
+  const fileNames = {
+    "ESV": { file: "ESV.json", name: "English Standard Version" },
+    "GNT": { file: "GNT.json", name: "Greek New Testament" },
+    "KJV": { file: "KJV.json", name: "King James Version" },
+    "RVR": { file: "RVR.json", name: "Reina Valera 1909" }
+  };
+  const result = {};
+  await Promise.all(Object.entries(fileNames).map(([key, fileInfo]) =>
+    fetch(fileInfo.file)
+      .then(r => r.json())
+      .then(data => {
+        const rootKey = Object.keys(data)[0];
+        const rootData = data[rootKey];
+
+        let books = rootData.books || data;
+
+        // 🔑 Normalize Spanish book names so they match English lookups
+        if (key === "RVR") {
+          const normalizedBooks = {};
+          for (const [bookName, chapters] of Object.entries(books)) {
+            // Strip accents → e.g., Génesis → Genesis, Éxodo → Exodo
+            const normalized = bookName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            normalizedBooks[normalized] = chapters;
+          }
+          books = normalizedBooks;
+        }
+
+        result[key] = {
+          name: rootData.name || fileInfo.name,
+          books
+        };
+      })
+  ));
+  return result;
+}
+
 
     function updateVerseDisplays() {
       for (let i = 1; i <= windowCount; i++) {
