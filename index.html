@@ -177,13 +177,15 @@
 
         // Checkpoint 3: Core Functions
 
-        async function loadBibleData() {
-            const fileNames = {
-                "ESV": { file: "ESV.json", name: "English Standard Version" },
-                "GreekNT": { file: "GreekNT.json", name: "Greek New Testament" },
-                "KJV_with_Strongs": { file: "KJV_with_Strongs.json", name: "King James Version (with Strongs)" },
-                "RVR1909_with_Strongs": { file: "RVR1909_with_Strongs.json", name: "Reina Valera (Spanish with Strongs)" }
-            };
+async function loadBibleData() {
+    const fileNames = {
+        "ESV": { file: "ESV.json", name: "English Standard Version" },
+        "GNT": { file: "GNT.json", name: "Greek New Testament" }, // Changed
+        "KJV": { file: "KJV.json", name: "King James Version (with Strongs)" }, // Changed
+        "RVR": { file: "RVR.json", name: "Reina Valera (Spanish with Strongs)" }  // Changed
+    };
+    // ... rest of the function remains the same
+}
 
             const bibleData = {};
             const promises = [];
